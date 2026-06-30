@@ -570,40 +570,66 @@ function setupAdminCMS() {
         showLogin();
     });
 
-    // RENDER ADMIN LIST TABLE WITH DRAG AND DROP
+    // RENDER ADMIN LIST TABLE WITH ORDER BUTTONS
     function renderAdminTable() {
         tableBody.innerHTML = "";
         
-        activeThumbnails.forEach((item) => {
+        activeThumbnails.forEach((item, index) => {
             const tr = document.createElement("tr");
-            tr.setAttribute("draggable", "true");
             tr.setAttribute("data-id", item.id);
             
+            const isFirst = index === 0;
+            const isLast = index === activeThumbnails.length - 1;
+
             tr.innerHTML = `
-                <td style="padding-left: 12px; width: 30px; color: rgba(255,255,255,0.25); cursor: grab; user-select: none;">☰</td>
                 <td>
                     <img class="admin-table-img" src="${item.image_url}" alt="Preview" onerror="this.src=''; this.style.backgroundColor='${item.primary_color || '#333'}';">
                 </td>
                 <td style="font-weight: 600;">${item.title}</td>
                 <td>
                     <div class="table-actions">
+                        <button class="btn-table order-up magnet-target" data-id="${item.id}" ${isFirst ? 'disabled style="opacity:0.2;pointer-events:none;"' : ''} title="Mover arriba">↑</button>
+                        <button class="btn-table order-down magnet-target" data-id="${item.id}" ${isLast ? 'disabled style="opacity:0.2;pointer-events:none;"' : ''} title="Mover abajo">↓</button>
                         <button class="btn-table edit magnet-target" data-id="${item.id}">Editar</button>
                         <button class="btn-table delete magnet-target" data-id="${item.id}">Borrar</button>
                     </div>
                 </td>
             `;
             
-            // Drag and Drop Event Listeners
-            tr.addEventListener("dragstart", handleDragStart);
-            tr.addEventListener("dragover", handleDragOver);
-            tr.addEventListener("dragleave", handleDragLeave);
-            tr.addEventListener("drop", handleDrop);
-            tr.addEventListener("dragend", handleDragEnd);
-            
             tableBody.appendChild(tr);
         });
 
-        // Add Listeners to CRUD buttons
+        // Move Up
+        tableBody.querySelectorAll(".btn-table.order-up").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                AudioSystem.click();
+                const id = e.target.getAttribute("data-id");
+                const idx = activeThumbnails.findIndex(x => x.id == id);
+                if (idx > 0) {
+                    [activeThumbnails[idx - 1], activeThumbnails[idx]] = [activeThumbnails[idx], activeThumbnails[idx - 1]];
+                    renderGrid();
+                    renderAdminTable();
+                    await saveNewSortOrder();
+                }
+            });
+        });
+
+        // Move Down
+        tableBody.querySelectorAll(".btn-table.order-down").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                AudioSystem.click();
+                const id = e.target.getAttribute("data-id");
+                const idx = activeThumbnails.findIndex(x => x.id == id);
+                if (idx < activeThumbnails.length - 1) {
+                    [activeThumbnails[idx], activeThumbnails[idx + 1]] = [activeThumbnails[idx + 1], activeThumbnails[idx]];
+                    renderGrid();
+                    renderAdminTable();
+                    await saveNewSortOrder();
+                }
+            });
+        });
+
+        // Edit
         tableBody.querySelectorAll(".btn-table.edit").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 const id = e.target.getAttribute("data-id");
@@ -611,6 +637,7 @@ function setupAdminCMS() {
             });
         });
 
+        // Delete
         tableBody.querySelectorAll(".btn-table.delete").forEach(btn => {
             btn.addEventListener("click", async (e) => {
                 if (confirm("¿Estás seguro de que quieres eliminar esta miniatura?")) {
@@ -621,76 +648,11 @@ function setupAdminCMS() {
         });
     }
 
-    // DRAG AND DROP HANDLERS
-    let dragSrcEl = null;
-
-    function handleDragStart(e) {
-        dragSrcEl = this;
-        this.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', this.getAttribute('data-id')); // Requerido por Firefox
-    }
-
-    function handleDragOver(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
-        }
-        if (this !== dragSrcEl) {
-            this.classList.add('drag-over');
-        }
-        e.dataTransfer.dropEffect = 'move';
-        return false;
-    }
-
-    function handleDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-
-    async function handleDrop(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        
-        this.classList.remove('drag-over');
-        
-        if (!dragSrcEl || dragSrcEl === this) return false;
-        
-        const draggedId = dragSrcEl.getAttribute('data-id');
-        const targetId = this.getAttribute('data-id');
-        
-        if (draggedId && targetId) {
-            const draggedIndex = activeThumbnails.findIndex(x => x.id == draggedId);
-            const targetIndex = activeThumbnails.findIndex(x => x.id == targetId);
-            
-            if (draggedIndex !== -1 && targetIndex !== -1) {
-                // Mover el elemento dentro del array
-                const [removed] = activeThumbnails.splice(draggedIndex, 1);
-                activeThumbnails.splice(targetIndex, 0, removed);
-                
-                // Re-renderizar listas localmente primero para un efecto visual instantáneo
-                renderGrid();
-                renderAdminTable();
-                
-                // Guardar el nuevo orden en Supabase o modo local
-                await saveNewSortOrder();
-            }
-        }
-        return false;
-    }
-
-    function handleDragEnd(e) {
-        tableBody.querySelectorAll('tr').forEach(row => {
-            row.classList.remove('dragging');
-            row.classList.remove('drag-over');
-        });
-        dragSrcEl = null;
-    }
-
     async function saveNewSortOrder() {
-        crudStatus.textContent = "Actualizando el orden en la base de datos...";
+        crudStatus.textContent = "Actualizando orden...";
         
         if (isSupabaseConfigured) {
             try {
-                // Actualizar cada miniatura con su nuevo índice en paralelo
                 const promises = activeThumbnails.map((item, index) => {
                     return supabaseClient
                         .from('thumbnails')
@@ -702,13 +664,12 @@ function setupAdminCMS() {
                 const errors = results.filter(r => r.error);
                 if (errors.length > 0) throw errors[0].error;
                 
-                crudStatus.textContent = "¡Orden guardado exitosamente en Supabase!";
+                crudStatus.textContent = "✓ Orden guardado.";
             } catch (err) {
-                console.error("Error al reordenar en Supabase:", err);
                 crudStatus.textContent = `Error al guardar orden: ${err.message}`;
             }
         } else {
-            crudStatus.textContent = "Orden actualizado localmente.";
+            crudStatus.textContent = "✓ Orden actualizado localmente.";
         }
     }
 
