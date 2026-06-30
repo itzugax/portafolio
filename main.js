@@ -626,17 +626,19 @@ function setupAdminCMS() {
 
     function handleDragStart(e) {
         dragSrcEl = this;
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
         this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-id')); // Requerido por Firefox
     }
 
     function handleDragOver(e) {
         if (e.preventDefault) {
             e.preventDefault();
         }
+        if (this !== dragSrcEl) {
+            this.classList.add('drag-over');
+        }
         e.dataTransfer.dropEffect = 'move';
-        this.classList.add('drag-over');
         return false;
     }
 
@@ -648,10 +650,14 @@ function setupAdminCMS() {
         e.stopPropagation();
         e.preventDefault();
         
-        const draggedId = e.dataTransfer.getData('text/plain');
+        this.classList.remove('drag-over');
+        
+        if (!dragSrcEl || dragSrcEl === this) return false;
+        
+        const draggedId = dragSrcEl.getAttribute('data-id');
         const targetId = this.getAttribute('data-id');
         
-        if (draggedId && targetId && draggedId !== targetId) {
+        if (draggedId && targetId) {
             const draggedIndex = activeThumbnails.findIndex(x => x.id == draggedId);
             const targetIndex = activeThumbnails.findIndex(x => x.id == targetId);
             
@@ -676,6 +682,7 @@ function setupAdminCMS() {
             row.classList.remove('dragging');
             row.classList.remove('drag-over');
         });
+        dragSrcEl = null;
     }
 
     async function saveNewSortOrder() {

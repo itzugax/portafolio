@@ -628,14 +628,21 @@ a, button {
 
 .thumbnail-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 60px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
+    .thumbnail-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+@media (max-width: 768px) {
     .thumbnail-grid {
         grid-template-columns: 1fr;
-        gap: 40px;
+        gap: 25px;
     }
 }
 
