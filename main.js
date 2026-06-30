@@ -738,7 +738,10 @@ function setupAdminCMS() {
             client,
             video_url: videoUrl,
             primary_color: primaryColor,
-            secondary_color: secondaryColor
+            secondary_color: secondaryColor,
+            description: "",
+            ctr: "",
+            time: ""
         };
         
         // Only update image_url if a new image was uploaded
