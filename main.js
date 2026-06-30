@@ -124,7 +124,7 @@ async function loadThumbnailsData() {
             const { data, error } = await supabaseClient
                 .from('thumbnails')
                 .select('*')
-                .order('id', { ascending: true });
+                .order('sort_order', { ascending: true });
                 
             if (error) throw error;
             
@@ -570,14 +570,17 @@ function setupAdminCMS() {
         showLogin();
     });
 
-    // RENDER ADMIN LIST TABLE
+    // RENDER ADMIN LIST TABLE WITH DRAG AND DROP
     function renderAdminTable() {
         tableBody.innerHTML = "";
         
         activeThumbnails.forEach((item) => {
             const tr = document.createElement("tr");
+            tr.setAttribute("draggable", "true");
+            tr.setAttribute("data-id", item.id);
             
             tr.innerHTML = `
+                <td style="padding-left: 12px; width: 30px; color: rgba(255,255,255,0.25); cursor: grab; user-select: none;">☰</td>
                 <td>
                     <img class="admin-table-img" src="${item.image_url}" alt="Preview" onerror="this.src=''; this.style.backgroundColor='${item.primary_color || '#333'}';">
                 </td>
@@ -589,6 +592,13 @@ function setupAdminCMS() {
                     </div>
                 </td>
             `;
+            
+            // Drag and Drop Event Listeners
+            tr.addEventListener("dragstart", handleDragStart);
+            tr.addEventListener("dragover", handleDragOver);
+            tr.addEventListener("dragleave", handleDragLeave);
+            tr.addEventListener("drop", handleDrop);
+            tr.addEventListener("dragend", handleDragEnd);
             
             tableBody.appendChild(tr);
         });
@@ -609,6 +619,90 @@ function setupAdminCMS() {
                 }
             });
         });
+    }
+
+    // DRAG AND DROP HANDLERS
+    let dragSrcEl = null;
+
+    function handleDragStart(e) {
+        dragSrcEl = this;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.getAttribute('data-id'));
+        this.classList.add('dragging');
+    }
+
+    function handleDragOver(e) {
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+        return false;
+    }
+
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+
+    async function handleDrop(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const draggedId = e.dataTransfer.getData('text/plain');
+        const targetId = this.getAttribute('data-id');
+        
+        if (draggedId && targetId && draggedId !== targetId) {
+            const draggedIndex = activeThumbnails.findIndex(x => x.id == draggedId);
+            const targetIndex = activeThumbnails.findIndex(x => x.id == targetId);
+            
+            if (draggedIndex !== -1 && targetIndex !== -1) {
+                // Mover el elemento dentro del array
+                const [removed] = activeThumbnails.splice(draggedIndex, 1);
+                activeThumbnails.splice(targetIndex, 0, removed);
+                
+                // Re-renderizar listas localmente primero para un efecto visual instantáneo
+                renderGrid();
+                renderAdminTable();
+                
+                // Guardar el nuevo orden en Supabase o modo local
+                await saveNewSortOrder();
+            }
+        }
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        tableBody.querySelectorAll('tr').forEach(row => {
+            row.classList.remove('dragging');
+            row.classList.remove('drag-over');
+        });
+    }
+
+    async function saveNewSortOrder() {
+        crudStatus.textContent = "Actualizando el orden en la base de datos...";
+        
+        if (isSupabaseConfigured) {
+            try {
+                // Actualizar cada miniatura con su nuevo índice en paralelo
+                const promises = activeThumbnails.map((item, index) => {
+                    return supabaseClient
+                        .from('thumbnails')
+                        .update({ sort_order: index })
+                        .eq('id', item.id);
+                });
+                
+                const results = await Promise.all(promises);
+                const errors = results.filter(r => r.error);
+                if (errors.length > 0) throw errors[0].error;
+                
+                crudStatus.textContent = "¡Orden guardado exitosamente en Supabase!";
+            } catch (err) {
+                console.error("Error al reordenar en Supabase:", err);
+                crudStatus.textContent = `Error al guardar orden: ${err.message}`;
+            }
+        } else {
+            crudStatus.textContent = "Orden actualizado localmente.";
+        }
     }
 
     // FORM LOAD EDITING ITEM
@@ -762,8 +856,8 @@ function setupAdminCMS() {
                     if (error) throw error;
                 } else {
                     // CREATE
-                    // generate simple string id for frontend handling if needed
                     itemData.id = Date.now().toString();
+                    itemData.sort_order = activeThumbnails.length;
                     // make sure image is present on new creations
                     if (!imageUrl) {
                         itemData.image_url = "assets/thumbnails/placeholder.jpg";
@@ -800,6 +894,7 @@ function setupAdminCMS() {
                 const newItem = {
                     id: Date.now().toString(),
                     ...itemData,
+                    sort_order: activeThumbnails.length,
                     image_url: imageUrl || "assets/thumbnails/placeholder.jpg"
                 };
                 activeThumbnails.push(newItem);

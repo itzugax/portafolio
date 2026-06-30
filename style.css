@@ -1557,3 +1557,24 @@ a, button {
     color: currentColor;
     transform: translateX(4px);
 }
+
+/* Drag and Drop Sorting Styles */
+.admin-table tr[draggable="true"] {
+    cursor: grab;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.admin-table tr[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.admin-table tr.dragging {
+    opacity: 0.45;
+    background: rgba(0, 255, 136, 0.08) !important;
+    border: 1px dashed #00ff88;
+}
+
+.admin-table tr.drag-over {
+    border-top: 2px solid #00ff88;
+    background: rgba(255, 255, 255, 0.04);
+}
