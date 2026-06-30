@@ -24,80 +24,7 @@ if (SUPABASE_URL !== "YOUR_SUPABASE_URL" && SUPABASE_ANON_KEY !== "YOUR_SUPABASE
 }
 
 // 2. DATA CONFIGURATION: Static Fallback Array (Modo offline)
-const STATIC_THUMBNAILS = [
-    {
-        id: "acheron",
-        title: "ACHERON",
-        difficulty: "Top 2 Extreme Demon",
-        description: "Atmósfera volcánica infernal. Detalle tridimensional extremo en espinas metálicas e iluminación de lava incandescente con contraste de sombras profundas.",
-        image_url: "https://picsum.photos/seed/acheron/800/450",
-        ctr: "+19.2%",
-        client: "Viprin",
-        time: "7 Horas",
-        primary_color: "#ff3333",
-        secondary_color: "#ff5e00"
-    },
-    {
-        id: "limbo",
-        title: "LIMBO",
-        difficulty: "Memory Demon",
-        description: "Estética cibernética y mística basada en las llaves del nivel. Enfoque de neón azul y púrpura sobre estructuras flotantes abstractas con destellos de lente (lens flare).",
-        image_url: "https://picsum.photos/seed/limbo/800/450",
-        ctr: "+21.4%",
-        client: "MindCap",
-        time: "9 Horas",
-        primary_color: "#00f5d4",
-        secondary_color: "#9d4edd"
-    },
-    {
-        id: "bloodlust",
-        title: "BLOODLUST",
-        difficulty: "Legendary Extreme Demon",
-        description: "El icónico demonio rojo. Fusión de arte vectorial y efectos de fuego hiperrealistas, con el icono del jugador resplandeciendo en el epicentro de la composición.",
-        image_url: "https://picsum.photos/seed/bloodlust/800/450",
-        ctr: "+18.7%",
-        client: "Knobbelboy",
-        time: "8 Horas",
-        primary_color: "#ff1a1a",
-        secondary_color: "#110000"
-    },
-    {
-        id: "kocmoc",
-        title: "KOCMOC",
-        difficulty: "Cosmic Extreme Demon",
-        description: "Estilo neo-space psicodélico. Ondas gravitacionales con degradados violetas y texturas de polvo estelar cósmico. Se priorizó el resplandor difuso en los bloques.",
-        image_url: "https://picsum.photos/seed/kocmoc/800/450",
-        ctr: "+20.1%",
-        client: "CherryTeam",
-        time: "6 Horas",
-        primary_color: "#9d4edd",
-        secondary_color: "#0055ff"
-    },
-    {
-        id: "tidal-wave",
-        title: "TIDAL WAVE",
-        difficulty: "Top 1 Demon",
-        description: "Diseño tropical retro-wave. Sombras de agua fotorrealistas con paleta de color cian brillante y amarillo sol. Composición limpia y veraniega de alta legibilidad.",
-        image_url: "https://picsum.photos/seed/tidalwave/800/450",
-        ctr: "+24.8%",
-        client: "Onilink",
-        time: "10 Horas",
-        primary_color: "#00f5d4",
-        secondary_color: "#ffee00"
-    },
-    {
-        id: "zodiac",
-        title: "ZODIAC",
-        difficulty: "Classic Extreme Demon",
-        description: "Estilo de constelaciones doradas y nubes de gas estelares. Destellos lineales elegantes sobre los bloques del nivel para dar una sensación mística y astronómica.",
-        image_url: "https://picsum.photos/seed/zodiac/800/450",
-        ctr: "+17.6%",
-        client: "Bianox",
-        time: "5 Horas",
-        primary_color: "#ffee00",
-        secondary_color: "#ff5e00"
-    }
-];
+const STATIC_THUMBNAILS = [];
 
 let activeThumbnails = [...STATIC_THUMBNAILS];
 
@@ -204,12 +131,12 @@ async function loadThumbnailsData() {
             if (data && data.length > 0) {
                 activeThumbnails = data;
             } else {
-                console.log("Tabla de Supabase vacía. Insertando datos offline como demo.");
-                activeThumbnails = [...STATIC_THUMBNAILS];
+                console.log("Tabla de Supabase vacía.");
+                activeThumbnails = [];
             }
         } catch (e) {
             console.error("Error al conectar con la base de datos de Supabase: ", e);
-            activeThumbnails = [...STATIC_THUMBNAILS];
+            activeThumbnails = [];
         }
     }
 }
