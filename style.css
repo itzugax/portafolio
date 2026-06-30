@@ -1351,6 +1351,24 @@ a, button {
     color: var(--neon-red);
 }
 
+.btn-table.order-up,
+.btn-table.order-down {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    line-height: 1;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.btn-table.order-up:hover,
+.btn-table.order-down:hover {
+    color: #00ff88;
+    border-color: #00ff88 !important;
+    background: rgba(0, 255, 136, 0.07);
+}
+
 .dashboard-footer-actions {
     margin-top: 30px;
     display: flex;
