@@ -116,8 +116,15 @@ a, button {
    CUSTOM INERTIAL CURSOR (Flecha verde neón)
    ========================================================================== */
 
-/* Oculta el cursor del sistema en todo el documento */
-*, *::before, *::after { cursor: none !important; }
+/* Oculta el cursor del sistema solo en desktop */
+@media (hover: hover) and (pointer: fine) {
+    *, *::before, *::after { cursor: none !important; }
+}
+
+/* En móvil/táctil: ocultar el cursor personalizado completamente */
+@media (hover: none), (pointer: coarse) {
+    .custom-cursor, .custom-cursor-dot { display: none !important; }
+}
 
 .custom-cursor {
     width: 20px;
@@ -666,6 +673,25 @@ a, button {
     border: 1px solid rgba(255, 255, 255, 0.03);
     box-shadow: 0 20px 40px rgba(0,0,0,0.4);
     transition: border-color 0.4s ease-out, box-shadow 0.4s ease-out;
+    /* Evitar parpadeo negro en GPU compositing */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    isolation: isolate;
+    transform: translateZ(0);
+}
+
+/* En móvil: deshabilitar efectos 3D costosos */
+@media (hover: none), (pointer: coarse) {
+    .card-inner {
+        transform-style: flat;
+        transform: none !important;
+    }
+    .card-image-wrap {
+        transform: none !important;
+    }
+    .card-details {
+        transform: none !important;
+    }
 }
 
 /* Inner elements spacing */

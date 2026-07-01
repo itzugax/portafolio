@@ -214,26 +214,35 @@ function initPreloader() {
 
 // 7. INSTANT CUSTOM CURSOR (NO LAG)
 function setupCursor() {
+    // No usar cursor personalizado en dispositivos táctiles
+    const isTouch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (isTouch) return;
+
     const cursor = document.querySelector(".custom-cursor");
-    
     document.body.style.cursor = "none";
+
+    // Throttle variable para el parallax
+    let lastParallaxTime = 0;
     
     window.addEventListener("mousemove", (e) => {
-        // Posicionar el cursor instantáneamente sin lag/delay
-        gsap.set(cursor, { x: e.clientX, y: e.clientY });
+        // Posicionar el cursor instantáneamente sin lag
+        cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
         
-        // Desplazamiento de paralaje suave para el fondo (máx 35px en dirección opuesta)
-        const xPercent = (e.clientX / window.innerWidth) - 0.5;
-        const yPercent = (e.clientY / window.innerHeight) - 0.5;
-        
-        gsap.to(".bg-image", {
-            x: -xPercent * 35,
-            y: -yPercent * 35,
-            duration: 1.2,
-            ease: "power2.out",
-            overwrite: "auto"
-        });
-    });
+        // Parallax del fondo con throttle a 60fps máx
+        const now = performance.now();
+        if (now - lastParallaxTime > 16) {
+            lastParallaxTime = now;
+            const xPercent = (e.clientX / window.innerWidth) - 0.5;
+            const yPercent = (e.clientY / window.innerHeight) - 0.5;
+            gsap.to(".bg-image", {
+                x: -xPercent * 30,
+                y: -yPercent * 30,
+                duration: 1.0,
+                ease: "power2.out",
+                overwrite: "auto"
+            });
+        }
+    }, { passive: true });
     
     document.addEventListener("mouseover", (e) => {
         const target = e.target;
@@ -314,6 +323,9 @@ function renderGrid() {
 
 // 9. CARD 3D TILT EFFECT
 function setupCardTilt(card) {
+    // No hacer tilt en móvil/touch (ahorra recursos y evita bugs)
+    if (window.matchMedia('(hover: none), (pointer: coarse)').matches) return;
+
     const inner = card.querySelector(".card-inner");
     const imageWrap = card.querySelector(".card-image-wrap");
     
@@ -348,7 +360,7 @@ function setupCardTilt(card) {
             duration: 0.2,
             ease: "power2.out"
         });
-    });
+    }, { passive: true });
     
     card.addEventListener("mouseleave", () => {
         gsap.to(inner, {
